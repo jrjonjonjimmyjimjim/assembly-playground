@@ -3,6 +3,8 @@
 
 _main:
 
+  mov x28, #10 ; const x28 = 10
+
   adrp x1, first_operand_str@PAGE
   add x1, x1, first_operand_str@PAGEOFF
   mov x2, #32 ; How long is the thing it's writing
@@ -13,10 +15,28 @@ _main:
   mov x2, #63 ; How long is the thing it's reading
   bl read_str
 
+; parse int
+; the syscall should give back the length of what it read
+; I want to read 1 byte at a time
+; For each byte, subtract 48 and add that to an accumulator
+; If we are not at the last byte, mult accumulator by 10 and loop.
+; At least for first implementation, let's call ldrb on every byte, incrementing by just one byte each time
+  sub x0, x0, #1 ; Stop reading before newline
   adrp x1, first_operand_buffer@PAGE
   add x1, x1, first_operand_buffer@PAGEOFF
-  ldr x24, [x1]
-  sub x19, x24, #48
+  mov x22, #0 ; our index
+  parse_int_loop:
+    add x24, x1, x22 ; ptr x24 = x1 + x22
+    ldrb x21, [x24] ; char x21 = *x24
+    sub x23, x21, #48
+	madd x19, x19, x28, x23
+	; check if we still have chars to loop through
+	; if so, jump to loop end. else, mult by 10, increment index
+	; if index makes it to x0, break
+	cmp x22, x0
+	add x22, x22, #1
+	b.ne parse_int_loop
+
 
   adrp x1, second_operand_str@PAGE
   add x1, x1, second_operand_str@PAGEOFF
@@ -30,10 +50,11 @@ _main:
 
   adrp x1, second_operand_buffer@PAGE
   add x1, x1, second_operand_buffer@PAGEOFF
-  ldr x23, [x1]
-  sub x20, x23, #48
+  ldr x21, [x1]
+  sub x20, x21, #48
 
 
+; x19 and x20 hold int values of the operands
   add x21, x19, x20
   add x21, x21, #48
   adrp x1, output_str@PAGE
