@@ -33,8 +33,8 @@ _main:
 	; check if we still have chars to loop through
 	; if so, jump to loop end. else, mult by 10, increment index
 	; if index makes it to x0, break
-	cmp x22, x0
 	add x22, x22, #1
+	cmp x22, x0
 	b.ne parse_int_loop
 
 
@@ -48,14 +48,29 @@ _main:
   mov x2, #63 ; How long is the thing it's reading
   bl read_str
 
+; parse int, for operand 2
+; parse int can be made a subroutine, i'll worry about that later
+  sub x0, x0, #1
   adrp x1, second_operand_buffer@PAGE
   add x1, x1, second_operand_buffer@PAGEOFF
-  ldr x21, [x1]
-  sub x20, x21, #48
+  mov x22, #0 ; our index
+  parse_int_loop_2:
+    add x24, x1, x22
+    ldrb x21, [x24]
+    sub x23, x21, #48
+	madd x20, x20, x28, x23
+	add x22, x22, #1
+	cmp x22, x0
+	b.ne parse_int_loop_2
+
 
 
 ; x19 and x20 hold int values of the operands
   add x21, x19, x20
+
+; Now turn the int into a string
+; Until the number hits 0...
+; Divide by 10
   add x21, x21, #48
   adrp x1, output_str@PAGE
   add x1, x1, output_str@PAGEOFF
