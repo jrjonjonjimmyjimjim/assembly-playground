@@ -27,7 +27,7 @@ _main:
   mov x22, #0 ; our index
   parse_int_loop:
     add x24, x1, x22 ; ptr x24 = x1 + x22
-    ldrb x21, [x24] ; char x21 = *x24
+    ldrb w21, [x24] ; char x21 = *x24
     sub x23, x21, #48
 	madd x19, x19, x28, x23
 	; check if we still have chars to loop through
@@ -56,7 +56,7 @@ _main:
   mov x22, #0 ; our index
   parse_int_loop_2:
     add x24, x1, x22
-    ldrb x21, [x24]
+    ldrb w21, [x24]
     sub x23, x21, #48
 	madd x20, x20, x28, x23
 	add x22, x22, #1
@@ -70,27 +70,35 @@ _main:
 
 ; Now turn the int into a string
 ; Until the number hits 0...
-; Divide by 10
-  add x21, x21, #48
+; Divide by 10, each time taking the remainder and pushing it onto the stack
+; To get the remainder, take the result of dividing by 10, multiply it by 10, and subtract that from the original number
+; Once you're done, you can just pop off the stack, sequentially putting each character into the buffer
+  mov x19, #0 ; index, will be length of string
+  int_to_str_loop:
+    add x19, x19, #1
+    udiv x22, x21, x28
+    msub x23, x22, x28, x21
+    add x23, x23, #48
+    stp x23, xzr, [sp, #-16]!
+	mov x21, x22 ; move divided by ten value so we can look at the next digit on the next loop
+	cmp x22, xzr
+	b.ne int_to_str_loop ; Once we end up with 0 left, leave the loop
+
+  mov x20, #0 ; index
   adrp x1, output_str@PAGE
   add x1, x1, output_str@PAGEOFF
-  str x21, [x1]
+  str_to_buffer_loop:
+    add x20, x20, #1
+    add x21, x1, x20
+	ldp x22, xzr, [sp], #16
+    str x22, [x21]
+	cmp x20, x19
+	b.ne str_to_buffer_loop
+
 
 
   mov x2, #63 ; How long is the thing it's writing
   bl print_str
-
-  ; The string has now been dumped into first_operand_buffer
-  ; Subtract 48 from character at position 0. Store in X19-X28
-  ; Call read for second_operand_buffer
-  ; The string has now been dumped into second_operand_buffer
-  ; Subtract 48 from character at position 0. Store in X19-X28
-  ; Execute add, store result in X19-X28
-  ; Add 48 to result
-  ; Dump result into output_str
-
-
-
 
 
   mov x0, #0 ; exit with status code "0"
