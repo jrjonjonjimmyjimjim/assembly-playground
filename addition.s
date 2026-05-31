@@ -3,6 +3,8 @@
 
 _main:
 
+  mov x19, #0
+  mov x20, #0
   mov x28, #10 ; const x28 = 10
 
   adrp x1, first_operand_str@PAGE
