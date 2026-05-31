@@ -3,6 +3,16 @@
 
 _main:
 
+; callee-saved: I need to save these before I use them.
+; The other option would be caller-saved, which means I would have to save those registers
+; right before I call any subroutine, so that I can restore those registers immediately after the call
+; In hindsight, using the caller-saved registers probably makes more sense cause there's only a couple
+; of registers I really care about persisting between calls.
+  stp x19, x20, [sp, #-16]!
+  stp x21, x22, [sp, #-16]!
+  stp x23, x24, [sp, #-16]!
+  stp x27, x28, [sp, #-16]!
+
   mov x19, #0
   mov x20, #0
   mov x28, #10 ; const x28 = 10
@@ -102,6 +112,10 @@ _main:
   mov x2, #63 ; How long is the thing it's writing
   bl print_str
 
+  ldp x27, x28, [sp], #16
+  ldp x23, x24, [sp], #16
+  ldp x21, x22, [sp], #16
+  ldp x19, x20, [sp], #16
 
   mov x0, #0 ; exit with status code "0"
 
